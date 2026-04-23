@@ -4,15 +4,17 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
-
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
-
 app.use(express.json());
-app.use(cors());
 
+// Combine your CORS settings here at the top
+app.use(cors({
+  origin: true, 
+  credentials: true
+}));
 
 app.use((req, res, next) => {
   console.log(`Incoming Request: ${req.method} ${req.url}`);
@@ -52,8 +54,3 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-const cors = require('cors');
-app.use(cors({
-  origin: true, 
-  credentials: true
-}));

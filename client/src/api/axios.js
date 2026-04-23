@@ -1,15 +1,21 @@
 import axios from 'axios';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+const API = axios.create({
+  baseURL: 'http://localhost:5000/api', 
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+
+API.interceptors.request.use((config) => {
+  const userStorage = localStorage.getItem('user-storage');
+  if (userStorage) {
+    const parsedStorage = JSON.parse(userStorage);
+    // Zustand saves data inside a 'state' object
+    if (parsedStorage.state?.user?.token) {
+      config.headers.Authorization = `Bearer ${parsedStorage.state.user.token}`;
+    }
   }
   return config;
 });
 
-export default api;
+
+export default API;

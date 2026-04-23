@@ -1,9 +1,22 @@
 import { useCartStore } from '../store/cartStore';
-import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore'; // 1. Import Auth Store
+import { Link, useNavigate } from 'react-router-dom'; // 2. Import useNavigate
 import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion'; // 3. Import Framer Motion
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, getTotalPrice } = useCartStore();
+  const { user } = useAuthStore(); // 4. Get User state
+  const navigate = useNavigate();
+
+  // 5. Checkout Protection Logic
+  const handleCheckout = () => {
+    if (user) {
+      navigate('/checkout');
+    } else {
+      navigate('/login');
+    }
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -22,7 +35,7 @@ const Cart = () => {
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold mb-8 text-white">Shopping Cart</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items List */}
@@ -32,7 +45,7 @@ const Cart = () => {
               <img src={item.images[0]?.url} alt={item.name} className="w-24 h-24 object-cover rounded-md bg-dark-900" />
               
               <div className="flex-1 text-center sm:text-left">
-                <h3 className="font-semibold text-lg">{item.name}</h3>
+                <h3 className="font-semibold text-lg text-white">{item.name}</h3>
                 <p className="text-gray-400 text-sm">{item.category}</p>
                 <div className="text-accent font-bold mt-1">${item.price}</div>
               </div>
@@ -45,7 +58,7 @@ const Cart = () => {
                 >
                   <Minus size={16} />
                 </button>
-                <span className="w-8 text-center font-medium">{item.qty}</span>
+                <span className="w-8 text-center font-medium text-white">{item.qty}</span>
                 <button 
                   onClick={() => updateQuantity(item._id, item.qty + 1)}
                   className="p-1 hover:text-accent transition-colors"
@@ -68,7 +81,7 @@ const Cart = () => {
 
         {/* Order Summary */}
         <div className="bg-dark-800 p-6 rounded-xl border border-dark-700 h-fit sticky top-24">
-          <h2 className="text-xl font-bold mb-6 border-b border-dark-700 pb-4">Order Summary</h2>
+          <h2 className="text-xl font-bold mb-6 border-b border-dark-700 pb-4 text-white">Order Summary</h2>
           
           <div className="space-y-3 text-gray-300 mb-6">
             <div className="flex justify-between">
@@ -87,13 +100,25 @@ const Cart = () => {
           
           <div className="flex justify-between text-xl font-bold text-white border-t border-dark-700 pt-4 mb-6">
             <span>Total</span>
-            <span>${getTotalPrice().toFixed(2)}</span>
+            <span className="text-accent">${getTotalPrice().toFixed(2)}</span>
           </div>
 
-         <Link to="/checkout" className="w-full bg-accent hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2 group">
-  Proceed to Checkout
-  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-</Link>
+          {/* 6. Button with Logic and Framer Motion */}
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCheckout} 
+            className="w-full bg-accent hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 group shadow-lg shadow-accent/20"
+          >
+            Proceed to Checkout
+            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+          
+          {!user && (
+            <p className="text-[10px] text-gray-500 text-center mt-3 uppercase tracking-tighter">
+              You will need to login to complete your order
+            </p>
+          )}
         </div>
       </div>
     </div>

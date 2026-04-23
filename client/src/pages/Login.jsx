@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User as UserIcon, Zap, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -8,37 +8,44 @@ const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   
-  const login = useAuthStore((state) => state.login);
+  // 1. Correctly pull state from AuthStore
+  const { login, signup, loading, error, user } = useAuthStore();
   const navigate = useNavigate();
+
+  // 2. Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // MOCK AUTHENTICATION (Replace with Axios call later)
+    // Validation
+    if (!formData.email || !formData.password || (!isLogin && !formData.name)) {
+      return toast.error('Please fill in all fields', { style: { background: '#333', color: '#fff' } });
+    }
+
     if (isLogin) {
-      if (formData.email && formData.password) {
-        // Fake successful login
-        login({ name: 'Test User', email: formData.email, role: 'user' }, 'mock-jwt-token-123');
-        toast.success('Welcome back!', { style: { background: '#333', color: '#fff' } });
-        navigate('/');
-      } else {
-        toast.error('Please fill in all fields', { style: { background: '#333', color: '#fff' } });
-      }
+      // Real Login Call
+      await login(formData.email, formData.password);
     } else {
-      if (formData.name && formData.email && formData.password) {
-        // Fake successful registration
-        login({ name: formData.name, email: formData.email, role: 'user' }, 'mock-jwt-token-123');
-        toast.success('Account created successfully!', { style: { background: '#333', color: '#fff' } });
-        navigate('/');
-      } else {
-        toast.error('Please fill in all fields', { style: { background: '#333', color: '#fff' } });
-      }
+      // Real Signup Call
+      await signup(formData.name, formData.email, formData.password);
     }
   };
+
+  // 3. Handle Errors from Backend
+  useEffect(() => {
+    if (error) {
+      toast.error(error, { style: { background: '#333', color: '#fff' } });
+    }
+  }, [error]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center animate-fade-in px-4">
@@ -63,7 +70,7 @@ const Login = () => {
         <div className="p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             
-            {/* Name Input (Only shows if Registering) */}
+            {/* Name Input */}
             {!isLogin && (
               <div className="relative group">
                 <UserIcon className="absolute left-3 top-3 text-gray-500 group-focus-within:text-accent transition-colors" size={20} />
@@ -74,6 +81,7 @@ const Login = () => {
                   value={formData.name}
                   onChange={handleChange}
                   className="w-full bg-dark-900 border border-dark-700 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-accent text-gray-200 transition-colors"
+                  required
                 />
               </div>
             )}
@@ -88,6 +96,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full bg-dark-900 border border-dark-700 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-accent text-gray-200 transition-colors"
+                required
               />
             </div>
 
@@ -101,15 +110,23 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full bg-dark-900 border border-dark-700 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-accent text-gray-200 transition-colors"
+                required
               />
             </div>
 
             <button 
               type="submit"
-              className="w-full bg-accent hover:bg-blue-600 text-white py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 group"
+              disabled={loading}
+              className="w-full bg-accent hover:bg-blue-600 disabled:bg-blue-800 disabled:cursor-not-allowed text-white py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 group"
             >
-              {isLogin ? 'Sign In' : 'Sign Up'}
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <>
+                  {isLogin ? 'Sign In' : 'Sign Up'}
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 
@@ -119,7 +136,7 @@ const Login = () => {
             <button 
               onClick={() => {
                 setIsLogin(!isLogin);
-                setFormData({ name: '', email: '', password: '' }); // Reset form
+                setFormData({ name: '', email: '', password: '' }); 
               }}
               className="text-accent hover:underline font-medium"
             >
@@ -127,7 +144,6 @@ const Login = () => {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

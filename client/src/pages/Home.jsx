@@ -1,21 +1,17 @@
 import { useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
-import { MOCK_PRODUCTS } from '../data'; // Import shared data
+import { MOCK_PRODUCTS } from '../data'; 
 
 const Home = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
 
   // Filter products based on search query
-
   const displayedProducts = MOCK_PRODUCTS.filter(product => {
-  
     const searchLower = searchQuery.toLowerCase().trim();
-    
-
     if (!searchLower) return true;
 
-  
     const matchName = product.name.toLowerCase().includes(searchLower);
     const matchCategory = product.category.toLowerCase().includes(searchLower);
     const matchDescription = product.description?.toLowerCase().includes(searchLower);
@@ -44,11 +40,32 @@ const Home = () => {
         </h2>
         
         {displayedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {displayedProducts.map(product => (
-              <ProductCard key={product._id} product={product} />
+          // Framer Motion Container for Stagger Effect
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 } // Delays each child card by 0.1s
+              }
+            }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {displayedProducts.map((product, index) => (
+              // We wrap the ProductCard in a motion.div here so the stagger effect triggers perfectly
+              <motion.div 
+                key={product._id}
+                variants={{
+                  hidden: { opacity: 0, y: 30 },
+                  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } }
+                }}
+              >
+                <ProductCard product={product} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
           <div className="text-center py-20 bg-dark-800 rounded-xl border border-dark-700">
             <p className="text-gray-400 text-lg">No products found matching your search.</p>

@@ -2,6 +2,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion'; // <--- 1. Import Framer Motion
 
 const ProductCard = ({ product }) => {
   const addToCart = useCartStore((state) => state.addToCart);
@@ -15,7 +16,13 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="bg-dark-800 rounded-xl overflow-hidden shadow-lg hover:shadow-accent/20 transition-all duration-300 group border border-dark-700 flex flex-col">
+    // 2. Change standard div to motion.div and add physics properties
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+      className="bg-dark-800 rounded-xl overflow-hidden shadow-lg hover:shadow-accent/20 transition-all duration-300 group border border-dark-700 flex flex-col"
+    >
       <Link to={`/product/${product._id}`} className="block relative h-48 overflow-hidden bg-dark-900">
         <img 
           src={product.images[0]?.url || '/placeholder.png'} 
@@ -36,16 +43,21 @@ const ProductCard = ({ product }) => {
         
         <div className="mt-auto flex justify-between items-center pt-4">
           <span className="text-xl font-bold text-white">${product.price}</span>
-          <button 
+          
+          {/* 3. Change button to motion.button and add hover/tap gestures */}
+          <motion.button 
             onClick={handleAdd}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 10 }}
             className="p-2 bg-accent hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center"
             aria-label="Add to cart"
           >
             <ShoppingCart size={20} />
-          </button>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

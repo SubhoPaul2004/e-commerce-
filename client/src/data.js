@@ -1,4 +1,4 @@
-import sayarImg from './assets/sayar.jpeg';
+
 export const MOCK_PRODUCTS = [
   // --- SMARTPHONES ---
   {

@@ -12,8 +12,10 @@ app.use(express.json());
 
 // Combine your CORS settings here at the top
 app.use(cors({
-  origin: ["http://localhost:5175", "http://localhost:5173", "https://your-frontend.vercel.app"],
-  credentials: true
+  origin: true, 
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use((req, res, next) => {

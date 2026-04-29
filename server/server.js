@@ -4,13 +4,14 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Vercel handles env vars automatically, but this keeps local dev working
+dotenv.config(); 
 
 const app = express();
 
 app.use(express.json());
 
-// Combine your CORS settings here at the top
+// 1. CORS Configuration
 app.use(cors({
   origin: true, 
   credentials: true,
@@ -18,20 +19,38 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+// 2. Logging Middleware
 app.use((req, res, next) => {
   console.log(`Incoming Request: ${req.method} ${req.url}`);
   next();
 });
 
-// 3. Database Connection
-if (!process.env.MONGO_URI) {
-    console.error("❌ ERROR: MONGO_URI is missing!");
+// 3. Database Connection (Optimized for Vercel/Serverless)
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+    console.error("❌ ERROR: MONGO_URI is missing in Environment Variables!");
     process.exit(1); 
 }
-mongoose.connection.models = {}; 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch((err) => console.error('❌ MongoDB Error:', err.message));
+
+// Optimization: This prevents Mongoose from trying to reconnect constantly in serverless
+const connectDB = async () => {
+  try {
+    if (mongoose.connection.readyState >= 1) return;
+
+    await mongoose.connect(MONGO_URI, {
+      dbName: 'test', // EXPLICITLY telling it to use the 'test' DB from your screenshot
+      serverSelectionTimeoutMS: 5000, // Fail fast (5s) instead of hanging for 30s
+      socketTimeoutMS: 45000,
+    });
+    console.log('✅ Connected to MongoDB Atlas (Database: test)');
+  } catch (err) {
+    console.error('❌ MongoDB Connection Error:', err.message);
+  }
+};
+
+// Execute connection
+connectDB();
 
 // 4. API Routes
 app.use('/api/users', require('./routes/userRoutes'));
@@ -46,13 +65,12 @@ app.get('/', (req, res) => {
 app.use((req, res, next) => {
   console.log(`❌ 404 Error: ${req.method} ${req.originalUrl} - Not Found`);
   res.status(404).json({ 
-    message: `Route ${req.originalUrl} not found. Check orderRoutes.js!` 
+    message: `Route ${req.originalUrl} not found.` 
   });
 });
 
 // 7. Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
